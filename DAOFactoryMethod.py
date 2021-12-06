@@ -37,6 +37,12 @@ class DAOFactory(ABC):
 
 
 class ResortDAOFactory(DAOFactory):
+
+    _observer: Observer = None
+
+    def __init__(self, observer=None):
+        self._observer = observer
+
     def create_DAO(self) -> DAO:
         return ResortDAO()
 
@@ -56,11 +62,21 @@ class FeatureDAOFactory(DAOFactory):
 
 
 class EnvironmentDAOFactory(DAOFactory):
+
+    _observer: Observer = None
+
+    def __init__(self, observer=None):
+        self._observer = observer
+
     def create_DAO(self) -> DAO:
         return EnvironmentDAO()
 
 
 class ResortDAO(DAO):
+
+    _last_action: dict = None
+    _observers: list = list()
+
     def get_all(self, dbcon: DataBaseConnection) -> list:
         con = dbcon.get_connection()
         statement = """select * from resorts;"""
@@ -117,6 +133,12 @@ class ResortDAO(DAO):
                 except KeyError:
                     raise sqlite3.IntegrityError()
 
+        self._last_action = {
+            "action": "add",
+            "object": resort
+        }
+        self.notify()
+
     def remove(self, dbcon: DataBaseConnection, object_):
         con = dbcon.get_connection()
         base_statement = """delete from resorts where id=:id"""
@@ -137,6 +159,12 @@ class ResortDAO(DAO):
         with con:
             for td in to_delete:
                 con.execute(base_statement, {"id": td[0]})
+
+        self._last_action = {
+            "action": "remove",
+            "object": object_
+        }
+        self.notify()
 
     def update(self, dbcon: DataBaseConnection, object_old: Resort.Resort, object_new: Resort.Resort):
         con = dbcon.get_connection()
@@ -163,6 +191,23 @@ class ResortDAO(DAO):
                     "name": object_new.name,
                     "price": object_new.price,
                 })
+
+        self._last_action = {
+            "action": "update",
+            "old": object_old,
+            "new": object_new
+        }
+        self.notify()
+
+    def attach(self, observer: Observer) -> None:
+        self._observers.append(observer)
+
+    def detach(self, observer: Observer) -> None:
+        self._observers.remove(observer)
+
+    def notify(self) -> None:
+        for observer in self._observers:
+            observer.update(self)
 
 
 class FeatureDAO(DAO, Subject):
@@ -268,6 +313,10 @@ class FeatureDAO(DAO, Subject):
 
 
 class EnvironmentDAO(DAO):
+
+    _last_action: dict = None
+    _observers: list = list()
+
     def get_all(self, dbcon: DataBaseConnection) -> list:
         con = dbcon.get_connection()
         statement = """select * from environments;"""
@@ -300,6 +349,12 @@ class EnvironmentDAO(DAO):
         with con:
             con.execute(base_statement, (environment.name, ))
 
+        self._last_action = {
+            "action": "add",
+            "object": environment
+        }
+        self.notify()
+
     def remove(self, dbcon: DataBaseConnection, object_):
         con = dbcon.get_connection()
         base_statement = """delete from environments where id=:id"""
@@ -315,6 +370,12 @@ class EnvironmentDAO(DAO):
         with con:
             for td in to_delete:
                 con.execute(base_statement, {"id": td[0]})
+
+        self._last_action = {
+            "action": "remove",
+            "object": object_
+        }
+        self.notify()
 
     def update(self, dbcon: DataBaseConnection, object_old: Environment.Environment, object_new: Environment.Environment):
         con = dbcon.get_connection()
@@ -334,6 +395,23 @@ class EnvironmentDAO(DAO):
                     "id": tu[0],
                     "name": object_new.name
                 })
+
+            self._last_action = {
+                "action": "update",
+                "old": object_old,
+                "new": object_new
+            }
+            self.notify()
+
+    def attach(self, observer: Observer) -> None:
+        self._observers.append(observer)
+
+    def detach(self, observer: Observer) -> None:
+        self._observers.remove(observer)
+
+    def notify(self) -> None:
+        for observer in self._observers:
+            observer.update(self)
 
 
 def get_all(dbcon: DataBaseConnection, dao_factory: DAOFactory) -> list:
@@ -413,7 +491,7 @@ if __name__ == "__main__":
     f_resorts = filter(dbconn, ResortDAOFactory(), params)
     print(f_resorts, "\nUpdate:")
 
-    update(dbconn, ResortDAOFactory(), resortBuilder.get_object(), Resort.Resort("very_expensive_resort", 599999.99))
+    update(dbconn, ResortDAOFactory(observer), resortBuilder.get_object(), Resort.Resort("very_expensive_resort", 599999.99))
     update(dbconn, FeatureDAOFactory(), features[1], Feature.Feature("expensive_feature"))
 
     all_resorts = get_all(dbconn, ResortDAOFactory())
@@ -422,7 +500,7 @@ if __name__ == "__main__":
     print(all_features)
 
     remove(dbconn, ResortDAOFactory(), [resortBuilder.get_object()])
-    remove(dbconn, EnvironmentDAOFactory(), environments)
+    remove(dbconn, EnvironmentDAOFactory(observer), environments)
 
     all_resorts = get_all(dbconn, ResortDAOFactory())
     print("\nRemove\n", all_resorts)
