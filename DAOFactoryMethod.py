@@ -72,7 +72,7 @@ class EnvironmentDAOFactory(DAOFactory):
         return EnvironmentDAO()
 
 
-class ResortDAO(DAO):
+class ResortDAO(DAO, Subject):
 
     _last_action: dict = None
     _observers: list = list()
@@ -312,7 +312,7 @@ class FeatureDAO(DAO, Subject):
             observer.update(self)
 
 
-class EnvironmentDAO(DAO):
+class EnvironmentDAO(DAO, Subject):
 
     _last_action: dict = None
     _observers: list = list()
