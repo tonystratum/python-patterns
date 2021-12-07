@@ -44,7 +44,10 @@ class ResortDAOFactory(DAOFactory):
         self._observer = observer
 
     def create_DAO(self) -> DAO:
-        return ResortDAO()
+        dao = ResortDAO()
+        if self._observer:
+            dao.attach(self._observer)
+        return dao
 
 
 class FeatureDAOFactory(DAOFactory):
@@ -57,7 +60,7 @@ class FeatureDAOFactory(DAOFactory):
     def create_DAO(self) -> DAO:
         dao = FeatureDAO()
         if self._observer:
-            dao.attach(observer)
+            dao.attach(self._observer)
         return dao
 
 
@@ -69,7 +72,10 @@ class EnvironmentDAOFactory(DAOFactory):
         self._observer = observer
 
     def create_DAO(self) -> DAO:
-        return EnvironmentDAO()
+        dao = EnvironmentDAO()
+        if self._observer:
+            dao.attach(self._observer)
+        return dao
 
 
 class ResortDAO(DAO, Subject):
