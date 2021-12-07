@@ -77,9 +77,19 @@ class DataBaseConnection(object):
         return cls.__instance
 
     @classmethod
-    def init_tables(cls):
+    def init_tables(cls, drop_tables=False):
         con = cls.get_connection()
         with con:
+            if drop_tables:
+                con.execute(
+                    """PRAGMA writable_schema = 1;"""
+                )
+                con.execute(
+                    """delete from sqlite_master where type in ('table', 'index', 'trigger');"""
+                )
+                con.execute(
+                    """PRAGMA writable_schema = 0;"""
+                )
             for statement in CREATE_TABLES:
                 con.execute(statement)
 

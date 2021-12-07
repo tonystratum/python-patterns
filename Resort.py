@@ -8,31 +8,31 @@ class Resort:
 
 class ResortBuilder:
     def __init__(self):
-        self.game = Resort()
+        self.resort = Resort()
 
     def reset(self) -> Resort:
-        self.game = Resort()
-        return self.game
+        self.resort = Resort()
+        return self.resort
 
     def get_object(self) -> Resort:
-        return self.game
+        return self.resort
 
     def set_name(self, name: str = ""):
-        self.game.name = name
+        self.resort.name = name
 
     def set_price(self, price: float = .0):
-        self.game.price = price
+        self.resort.price = price
 
     def add_feature_ids(self, feature_ids: list):
         for feature_id in feature_ids:
-            self.game.feature_ids.add(feature_id)
+            self.resort.feature_ids.add(feature_id)
 
     def clear_feature_ids(self):
-        self.game.feature_ids = set()
+        self.resort.feature_ids = set()
 
     def add_environments(self, environments: list):
         for environment in environments:
-            self.game.environment_ids.add(environment)
+            self.resort.environment_ids.add(environment)
 
     def clear_environments(self):
-        self.game.environment_ids = set()
+        self.resort.environment_ids = set()
