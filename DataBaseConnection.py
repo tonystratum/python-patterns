@@ -40,6 +40,7 @@ create table if not exists resort_environments (
 class DataBaseConnection(object):
     __instance = None
     connection = None
+    db_file_path: str = None
 
     def __init__(self):
         pass
@@ -51,12 +52,17 @@ class DataBaseConnection(object):
         return cls.__instance.connection
 
     @classmethod
-    def open_connection(cls, db_file_path: str):
+    def open_connection(cls, db_file_path: str, reinit_file: bool = False):
         if cls.__instance.connection:
             # close previous connection
             raise ConnectionError("Close previous connection.")
 
         # open new connection
+        cls.db_file_path = db_file_path
+        if reinit_file:
+            if os.path.exists(db_file_path):
+                os.remove(db_file_path)
+
         cls.__instance.connection = sqlite3.connect(db_file_path)
         return cls.__instance.connection
 
@@ -77,19 +83,9 @@ class DataBaseConnection(object):
         return cls.__instance
 
     @classmethod
-    def init_tables(cls, drop_tables=False):
+    def init_tables(cls):
         con = cls.get_connection()
         with con:
-            if drop_tables:
-                con.execute(
-                    """PRAGMA writable_schema = 1;"""
-                )
-                con.execute(
-                    """delete from sqlite_master where type in ('table', 'index', 'trigger');"""
-                )
-                con.execute(
-                    """PRAGMA writable_schema = 0;"""
-                )
             for statement in CREATE_TABLES:
                 con.execute(statement)
 
