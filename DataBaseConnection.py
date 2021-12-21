@@ -1,4 +1,5 @@
 import sqlite3
+import os
 
 
 CREATE_TABLES = ["""
@@ -33,8 +34,24 @@ create table if not exists resort_environments (
     primary key (resort_id, environment_id),
     foreign key (resort_id) references resorts(id) on delete cascade,
     foreign key (environment_id) references environments(id) on delete cascade
-);
-"""]
+);""",
+"""
+create table if not exists roles (
+    id integer primary key autoincrement,
+    name text not null
+);""",
+'''
+insert into roles (name) values ("admin"), ("user");
+''',
+"""
+create table if not exists users (
+    id integer primary key autoincrement,
+    role_id integer not null,
+    login text not null unique,
+    phash text not null,
+    foreign key (role_id) references roles(id) on delete cascade
+);"""
+]
 
 
 class DataBaseConnection(object):
